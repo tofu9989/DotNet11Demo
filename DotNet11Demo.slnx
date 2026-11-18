@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/DemoConsole/">
+    <Project Path="DemoConsole/DotNet11Demo.csproj" />
+  </Folder>
+  <Project Path="Benchmarks/Benchmarks.csproj" />
+  <Project Path="Comparison/Comparison.csproj" />
+  <Project Path="Tests/Tests.csproj" />
+</Solution>

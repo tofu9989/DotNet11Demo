@@ -424,3 +424,7 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# BenchmarkDotNet artifacts
+BenchmarkDotNet.Artifacts/
+Benchmarks/.bdn/
