@@ -1,6 +1,7 @@
-﻿using System.IO.Compression;
+using System.IO.Compression;
 using System.Text;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 
 // Run:  dotnet run -c Release --project Benchmarks -- --filter *
@@ -21,6 +22,8 @@ BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 // New pattern (.NET 11): collection expression with with(...) args
 // ============================================================
 [MemoryDiagnoser]
+[SimpleJob(RuntimeMoniker.Net10_0)]
+[SimpleJob(RuntimeMoniker.Net11_0)]
 public class HashSetInitBenchmarks
 {
     private readonly string[] _items = Enumerable.Range(0, 1_000).Select(i => $"item-{i}").ToArray();
@@ -39,11 +42,37 @@ public class HashSetInitBenchmarks
 }
 
 // ============================================================
-// Old API (.NET 10): GZipStream
-// New API (.NET 11): ZstandardStream
+// Compression — same code, two runtimes: is GZip faster on .NET 11?
 // ============================================================
 [MemoryDiagnoser]
+[SimpleJob(RuntimeMoniker.Net10_0)]
+[SimpleJob(RuntimeMoniker.Net11_0)]
 public class CompressionBenchmarks
+{
+    private byte[] _payload = null!;
+
+    [GlobalSetup]
+    public void Setup() => _payload = Encoding.UTF8.GetBytes(
+        string.Concat(Enumerable.Repeat("The quick brown fox jumps over the lazy dog. ", 300)));
+
+    [Benchmark(Baseline = true)]
+    public byte[] GZip()
+    {
+        using var output = new MemoryStream();
+        using (var gz = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true))
+            gz.Write(_payload, 0, _payload.Length);
+        return output.ToArray();
+    }
+}
+
+// ============================================================
+// Old API (.NET 10): GZipStream
+// New API (.NET 11): ZstandardStream — net11.0 only, the type doesn't exist on .NET 10
+// ============================================================
+#if NET11_0_OR_GREATER
+[MemoryDiagnoser]
+[SimpleJob(RuntimeMoniker.Net11_0)]
+public class ZstandardVsGzipBenchmarks
 {
     private byte[] _payload = null!;
 
@@ -69,12 +98,15 @@ public class CompressionBenchmarks
         return output.ToArray();
     }
 }
+#endif
 
 // ============================================================
 // Old pattern (.NET 10): flag / result variable to leave nested loops
 // New pattern (C# 15): labeled break
 // ============================================================
 [MemoryDiagnoser]
+[SimpleJob(RuntimeMoniker.Net10_0)]
+[SimpleJob(RuntimeMoniker.Net11_0)]
 public class NestedLoopExitBenchmarks
 {
     [Benchmark(Baseline = true)]
@@ -97,3 +129,4 @@ public class NestedLoopExitBenchmarks
         return found;
     }
 }
+
